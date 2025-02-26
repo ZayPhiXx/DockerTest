@@ -1,21 +1,20 @@
-# Utilisation d'une image de base générique et lourde
-FROM ubuntu:latest
-
-# Mise à jour des paquets et installation de dépendances
-RUN apt-get update
-RUN apt-get install -y gcc make
-
-# Répertoire de travail dans l'image
+# Étape 1 : Compilation dans une image intermédiaire
+FROM gcc:latest AS builder
 WORKDIR /app
 
-# Copie du Makefile et des sources C
+# Copier le code source et le Makefile
 COPY Makefile .
 COPY src/ src/
 
-# Compilation du programme
-RUN make
+# Compiler l'application
+RUN make all
 
-EXPOSE 8080
+# Étape 2 : Image finale plus légère
+FROM debian:bookworm-slim
+WORKDIR /app
 
-# Commande pour exécuter le programme
+# Copier uniquement l'exécutable depuis l'étape de build
+COPY --from=builder /app/calculator .
+
+# Définir le point d’entrée
 CMD ["./calculator"]
